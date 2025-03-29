@@ -66,56 +66,65 @@ def parse_log_line(line):
         }
     return None
 
-# Función para detectar archivos sensibles
 def is_sensitive_file(path):
     """Verifica si el camino de la URL apunta a un archivo o directorio sensible."""
-    # Lista de extensiones y archivos sensibles
-    sensitive_extensions = [
-        # Archivos de Configuración
-        r'\.env$', r'config\.(php|inc|json|xml|yml)$', r'settings\.(py|json)$', 
-        r'database\.(yml|php|inc)$', r'web\.config$', r'\.ini$', r'\.conf$', 
-        r'\.properties$', r'\.toml$',
-        # Archivos de Autenticación
-        r'\.htpasswd$', r'passwd$', r'shadow$', r'group$',
-        # Archivos de Respaldo y Logs
-        r'\.(bak|old)$', r'~$', r'\.log$', r'\.bash_history$', r'\.profile$', r'\.bashrc$',
-        # Archivos de Código Fuente y Bases de Datos
-        r'\.(php|asp|jsp|aspx)$', r'\.(sql|db|sqlite)$',
-        # Archivos Específicos de Aplicaciones
-        r'^wp-config\.php$', r'^configuration\.php$', r'^settings\.php$', 
-        r'^application\.yml$', r'^credentials\.json$', r'^client_secrets\.json$', 
-        r'^api_keys\.txt$', r'^ssh_keys$', r'^id_rsa$', r'^cert\.key$', 
-        r'^apache2\.conf$', r'^httpd\.conf$', r'^nginx\.conf$', r'^php\.ini$'
-    ]
-    
-    # Directorios sensibles
-    sensitive_dirs = [
-        r'admin\/?$', r'login\/?$', r'cgi-bin\/?$', r'backup\/?$', 
-        r'scripts\/?$', r'etc\/?$', r'wp-admin\/?$', r'phpmyadmin\/?$'
-    ]
-    
-    # Palabras clave en nombres de archivo
-    sensitive_keywords = [
-        r'secret', r'password', r'key', r'api', r'token', r'credential'
-    ]
-    
-    # Si el path termina en '/', es un directorio
-    if path.endswith('/'):
-        for pattern in sensitive_dirs:
-            if re.search(pattern, path, re.IGNORECASE):
-                return True
-    else:
-        # Extraer el nombre del archivo del path
-        filename = os.path.basename(path)
-        # Revisar extensiones y archivos sensibles
-        for pattern in sensitive_extensions:
-            if re.search(pattern, filename, re.IGNORECASE):
-                return True
-        # Revisar palabras clave en el nombre del archivo
+    try:
+        # Asegurarse de que el path sea una cadena
+        if isinstance(path, bytes):
+            path = path.decode('utf-8')
+
+        # Lista de extensiones y archivos sensibles
+        sensitive_extensions = [
+            r'\.env$', r'config\.(php|inc|json|xml|yml)$', r'settings\.(py|json)$', 
+            r'database\.(yml|php|inc)$', r'web\.config$', r'\.ini$', r'\.conf$', 
+            r'\.properties$', r'\.toml$',
+            r'\.htpasswd$', r'passwd$', r'shadow$', r'group$', r'\.(bak|old)$', 
+            r'~$', r'\.log$', r'\.bash_history$', r'\.profile$', r'\.bashrc$',
+            r'\.(php|asp|jsp|aspx)$', r'\.(sql|db|sqlite)$', r'^wp-config\.php$', 
+            r'^configuration\.php$', r'^settings\.php$', r'^application\.yml$', 
+            r'^credentials\.json$', r'^client_secrets\.json$', r'^api_keys\.txt$', 
+            r'^ssh_keys$', r'^id_rsa$', r'^cert\.key$', r'^apache2\.conf$', 
+            r'^httpd\.conf$', r'^nginx\.conf$', r'^php\.ini$'
+        ]
+        
+        # Directorios sensibles
+        sensitive_dirs = [
+            r'admin\/?$', r'login\/?$', r'cgi-bin\/?$', r'backup\/?$', 
+            r'scripts\/?$', r'etc\/?$', r'wp-admin\/?$', r'phpmyadmin\/?$'
+        ]
+        
+        # Palabras clave en el path completo
+        sensitive_keywords = [
+            r'secret', r'password', r'key', r'api', r'token', r'credential', r'auth', 
+            r'login', r'config', r'backup', r'private', r'admin', r'sensitive', 
+            r'secure', r'confidential', r'protected', r'private', r'system', 
+            r'database', r'webroot', r'source', r'upload', r'uploads', r'cache', 
+            r'tmp', r'temporary', r'storage', r'logs', r'log', r'archive', 
+            r'archives', r'dumps', r'dump', r'sql', r'backup', r'old', r'backups', 
+            r'previous', r'last', r'latest', r'newest', r'servlet',
+        ]
+        
+        # Verificar si el path completo contiene palabras clave sensibles
         for keyword in sensitive_keywords:
-            if re.search(keyword, filename, re.IGNORECASE):
+            if re.search(keyword, path, re.IGNORECASE):
                 return True
-    return False
+
+        # Si el path termina en '/', es un directorio
+        if path.endswith('/'):
+            for pattern in sensitive_dirs:
+                if re.search(pattern, path, re.IGNORECASE):
+                    return True
+        else:
+            # Extraer el nombre del archivo del path
+            filename = os.path.basename(path)
+            # Revisar extensiones y archivos sensibles
+            for pattern in sensitive_extensions:
+                if re.search(pattern, filename, re.IGNORECASE):
+                    return True
+        return False
+    except Exception as e:
+        print(f"Error en is_sensitive_file con path={path}: {e}")
+        return False
 
 # Función para detectar inyección SQL
 def has_sql_injection(query):
@@ -206,6 +215,7 @@ if __name__ == "__main__":
     except KeyboardInterrupt:
         print("\nDeteniendo el monitoreo...")
         conn.close()
+        plot_top_urls()
     except Exception as e:
         print(f"Error: {e}")
         conn.close()
