@@ -206,16 +206,17 @@ def process_logs():
                 print(f"¡Alerta! Petición sospechosa: {log['ip']} - {log['method']} {log['url']} - {log['status']}")
             else:
                 print(f"Registrada petición: {log['ip']} - {log['method']} {log['url']} - {log['status']}")
-
-# Ejecución del programa
+                
 if __name__ == "__main__":
     # Iniciar el monitoreo en tiempo real
     try:
         process_logs()
     except KeyboardInterrupt:
         print("\nDeteniendo el monitoreo...")
-        plot_top_urls()
-        conn.close()
+        plot_top_urls()  # Mostrar las URLs más solicitadas
     except Exception as e:
-        print(f"Error: {e}")
+        print(f"Error inesperado: {e}")
+    finally:
+        # Cerrar la conexión a la base de datos y liberar recursos
         conn.close()
+        print("Recursos liberados. Programa terminado.")
