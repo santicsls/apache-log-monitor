@@ -214,8 +214,8 @@ if __name__ == "__main__":
         process_logs()
     except KeyboardInterrupt:
         print("\nDeteniendo el monitoreo...")
-        conn.close()
         plot_top_urls()
+        conn.close()
     except Exception as e:
         print(f"Error: {e}")
         conn.close()
